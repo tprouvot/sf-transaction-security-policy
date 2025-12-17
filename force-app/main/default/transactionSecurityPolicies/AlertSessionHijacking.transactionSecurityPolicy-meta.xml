@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TransactionSecurityPolicy xmlns="http://soap.sforce.com/2006/04/metadata">
+    <action>
+        <block>false</block>
+        <endSession>false</endSession>
+        <freezeUser>false</freezeUser>
+        <notifications>
+            <inApp>true</inApp>
+            <sendEmail>true</sendEmail>
+            <user>username@company.com</user>
+        </notifications>
+        <twoFactorAuthentication>false</twoFactorAuthentication>
+    </action>
+    <active>true</active>
+    <description>Tracks when unauthorized users gain ownership of a Salesforce user’s session with a stolen session identifier. To detect such an event, Salesforce evaluates how significantly a user’s current browser fingerprint diverges from the previously known fingerprint using a probabilistically inferred significance of change</description>
+    <developerName>AlertSessionHijacking</developerName>
+    <eventName>SessionHijackingEventStore</eventName>
+    <flow>PolicyCondition_AlertSessionHijacking</flow>
+    <masterLabel>Alert SessionHijacking</masterLabel>
+    <type>CustomConditionBuilderPolicy</type>
+</TransactionSecurityPolicy>

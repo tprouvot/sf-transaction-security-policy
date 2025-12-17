@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TransactionSecurityPolicy xmlns="http://soap.sforce.com/2006/04/metadata">
+    <action>
+        <block>false</block>
+        <endSession>false</endSession>
+        <freezeUser>false</freezeUser>
+        <notifications>
+            <inApp>false</inApp>
+            <sendEmail>true</sendEmail>
+            <user>username@company.com</user>
+        </notifications>
+        <twoFactorAuthentication>false</twoFactorAuthentication>
+    </action>
+    <active>true</active>
+    <description>Alert when a critical permission is assigned by another username than the CICD user.
+Permissions are:
+
+AssignPermissionSets, AuthorApex, CustomizeApplication, ForceTwoFactor, FreezeUsers, ManageEncryptionKeys, ManageInternalUsers, ManagePasswordPolicies, ManageProfilesPermissionsets, ManageRoles, ManageSharing, ManageUsers, ModifyAllData, MonitorLoginHistory, PasswordNeverExpires, ResetPasswords, ViewAllData, ManageDataspaceScope, ManageAccessPolicies, ModifyAllDataGovPolicies, ModifyAccessAllowPolicies, ModifyAccessDenyPolicies, ModifyAllDataGovTagAssign</description>
+    <developerName>AlertCriticalPermissionAs</developerName>
+    <eventName>PermissionSetEventStore</eventName>
+    <flow>PolicyCondition_AlertCriticalPermissionAs</flow>
+    <masterLabel>Alert Critical Permission Assignment</masterLabel>
+    <type>CustomConditionBuilderPolicy</type>
+</TransactionSecurityPolicy>
