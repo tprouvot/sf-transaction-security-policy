@@ -7,13 +7,14 @@
         <notifications>
             <inApp>false</inApp>
             <sendEmail>true</sendEmail>
-            <user>username@company.com</user>
+            <user>tprouvot@tprouvot-220825-100.sdo</user>
         </notifications>
         <twoFactorAuthentication>false</twoFactorAuthentication>
     </action>
     <active>true</active>
     <description>Blocks the creation or assignment of a Permission Set that has TransactionSecurityExempt rights.
-Warning: it can also be setup in profiles</description>
+WARNING (Spring '26): This policy is currently NOT WORKING because TransactionSecurityExempt is not recognized as a critical permission in PermissionSetEventStore. See: https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/sforce_api_objects_permissionseteventstore.htm
+Additional Warning: it can also be setup in profiles</description>
     <developerName>BlockTransactionSecurityE</developerName>
     <eventName>PermissionSetEventStore</eventName>
     <flow>PolicyCondition_BlockTransactionSecurityE</flow>
