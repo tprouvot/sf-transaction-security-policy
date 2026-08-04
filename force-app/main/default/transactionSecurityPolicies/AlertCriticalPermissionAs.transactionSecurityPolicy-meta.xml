@@ -13,9 +13,9 @@
     </action>
     <active>true</active>
     <description>Alert when a critical permission is assigned by another username than the CICD user.
-Permissions are:
+Permissions are (Spring 26):
 
-AssignPermissionSets, AuthorApex, CustomizeApplication, ForceTwoFactor, FreezeUsers, ManageEncryptionKeys, ManageInternalUsers, ManagePasswordPolicies, ManageProfilesPermissionsets, ManageRoles, ManageSharing, ManageUsers, ModifyAllData, MonitorLoginHistory, PasswordNeverExpires, ResetPasswords, ViewAllData, ManageDataspaceScope, ManageAccessPolicies, ModifyAllDataGovPolicies, ModifyAccessAllowPolicies, ModifyAccessDenyPolicies, ModifyAllDataGovTagAssign</description>
+AssignPermissionSets, AuthorApex, CustomizeApplication, ForceTwoFactor, FreezeUsers, ManageAccessPolicies, ManageDataspaceScope, ManageEncryptionKeys, ManageInternalUsers, ManagePasswordPolicies, ManageProfilesPermissionsets, ManageRoles, ManageSharing, ManageUsers, ModifyAccessAllowPolicies, ModifyAccessDenyPolicies, ModifyAllData, ModifyAllDataGovPolicies, ModifyAllDataGovTagAssign, MonitorLoginHistory, PasswordNeverExpires, ResetPasswords, TransactionSecurityExempt, ViewAllData</description>
     <developerName>AlertCriticalPermissionAs</developerName>
     <eventName>PermissionSetEventStore</eventName>
     <flow>PolicyCondition_AlertCriticalPermissionAs</flow>
