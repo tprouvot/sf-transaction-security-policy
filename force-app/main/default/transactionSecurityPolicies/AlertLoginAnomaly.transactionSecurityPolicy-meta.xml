@@ -14,7 +14,7 @@
     <active>true</active>
     <developerName>AlertLoginAnomaly</developerName>
     <eventName>LoginAnomalyEventStore</eventName>
-    <flow>PolicyCondition_LBeRIgAUOkHybhhqhJSM</flow>
+    <flow>PolicyCondition_AlertLoginAnomaly</flow>
     <masterLabel>Alert Login Anomaly</masterLabel>
     <type>CustomConditionBuilderPolicy</type>
 </TransactionSecurityPolicy>
