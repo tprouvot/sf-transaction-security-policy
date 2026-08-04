@@ -12,15 +12,18 @@
 #   - Authenticated to target org (sf org login web)
 #
 # Usage:
-#   ./deployTransactionSecurityPolicies.sh [target_username]
+#   ./deployTransactionSecurityPolicies.sh [notification_recipient] [cicd_username]
 #
 # Parameters:
-#   target_username (optional): Email address to use as notification recipient in policies
-#                               If not provided, uses the authenticated org's username
+#   notification_recipient (optional): Email address to use as notification recipient in policies
+#                                      If not provided, uses the authenticated org's username
+#   cicd_username (optional): CI/CD service account username to use in the critical permission flow
+#                             If not provided, the default placeholder remains in the metadata
 #
 # Examples:
 #   ./deployTransactionSecurityPolicies.sh
 #   ./deployTransactionSecurityPolicies.sh admin@company.com
+#   ./deployTransactionSecurityPolicies.sh admin@company.com cicd-service@company.com
 #
 # What this script does:
 #   1. Prompt for target org alias
@@ -44,7 +47,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/utils.sh"
 
 # Parse command line arguments
-CUSTOM_USERNAME="$1"
+CUSTOM_USERNAME="${1:-}"
+CICD_USERNAME="${2:-}"
 
 # Directory paths
 METADATA_DIR="$SCRIPT_DIR/force-app/main/default"
@@ -126,6 +130,12 @@ if [ -n "$CUSTOM_USERNAME" ]; then
 else
     printf "%b\n" "${CYAN}  Username: $POLICY_USERNAME ${YELLOW}(from org)${NC}"
 fi
+printf "%b\n" "${GREEN}CI/CD Service Account Username:${NC}"
+if [ -n "$CICD_USERNAME" ]; then
+    printf "%b\n" "${CYAN}  Username: $CICD_USERNAME ${YELLOW}(custom)${NC}"
+else
+    printf "%b\n" "${CYAN}  Username: cicd-username@company.com ${YELLOW}(default placeholder)${NC}"
+fi
 echo ""
 
 # Ask for confirmation
@@ -192,7 +202,27 @@ printf "%b\n" "${GREEN}✅ Updated $TOTAL_REPLACEMENTS policy file(s)${NC}"
 echo ""
 
 ################################################################################
-# Step 3: Deploy Metadata
+# Step 3: Update CI/CD Username in Flow Metadata
+################################################################################
+
+printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
+printf "%b\n" "${BLUE}  Updating CI/CD Username in Flow Metadata${NC}"
+printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
+echo ""
+
+FLOW_FILE="$FLOWS_DIR/PolicyCondition_AlertCriticalPermissionAs.flow-meta.xml"
+if [ -n "$CICD_USERNAME" ]; then
+    printf "%b\n" "${BLUE}Updating CI/CD username in flow metadata...${NC}"
+    if replace_in_file "$FLOW_FILE" "cicd-username@company.com" "$CICD_USERNAME" "CI/CD username"; then
+        printf "%b\n" "${GREEN}✅ Updated CI/CD username in flow metadata${NC}"
+    fi
+else
+    printf "%b\n" "${YELLOW}⚠️  No custom CI/CD username provided; keeping default placeholder in flow metadata${NC}"
+fi
+echo ""
+
+################################################################################
+# Step 4: Deploy Metadata
 ################################################################################
 
 printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
@@ -232,6 +262,11 @@ printf "%b\n" "${CYAN}TARGET ORG ($TARGET_ORG_ALIAS):${NC}"
 echo "  ✓ Deployed Transaction Security Policies ($POLICY_COUNT policies)"
 echo "  ✓ Deployed Policy Condition Flows ($FLOW_COUNT flows)"
 echo "  ✓ Configured notification recipient: $POLICY_USERNAME"
+if [ -n "$CICD_USERNAME" ]; then
+    echo "  ✓ Configured CI/CD service account: $CICD_USERNAME"
+else
+    echo "  ✓ CI/CD service account: cicd-username@company.com (default placeholder)"
+fi
 echo "  ✓ URL: $TARGET_ORG_URL"
 echo ""
 

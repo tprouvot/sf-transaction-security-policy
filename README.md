@@ -85,8 +85,11 @@ Use the provided deployment script to automatically deploy Transaction Security 
 # Deploy to default org (using org's username for notifications)
 ./deployTransactionSecurityPolicies.sh
 
-# Deploy with custom notification recipient
+# Deploy with a custom notification recipient
 ./deployTransactionSecurityPolicies.sh admin@yourcompany.com
+
+# Deploy with a custom notification recipient and CI/CD service account username
+./deployTransactionSecurityPolicies.sh admin@yourcompany.com cicd-service@yourcompany.com
 ```
 
 ### Why Use the Deployment Script?
@@ -221,7 +224,7 @@ This policy monitors the following critical permissions:
 
 #### Update Your CI/CD Username
 
-The most important customization is setting your CI/CD service account username. Edit the flow condition in the `PolicyCondition_AlertCriticalPermissionAs` flow to match your automation user. Look for the `Username` condition and replace `cicd-username@company.com` with your actual CI/CD service account.
+The most important customization is setting your CI/CD service account username. You can either pass it as the second argument to the deployment script, for example `./deployTransactionSecurityPolicies.sh admin@yourcompany.com cicd-service@yourcompany.com`, or edit the flow condition directly and replace `cicd-username@company.com` with your actual CI/CD service account.
 
 **File to edit:** `force-app/main/default/flows/PolicyCondition_AlertCriticalPermissionAs.flow-meta.xml`
 
