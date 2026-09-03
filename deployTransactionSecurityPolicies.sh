@@ -28,8 +28,10 @@
 # What this script does:
 #   1. Prompt for target org alias
 #   2. Retrieve org information (username)
-#   3. Replace placeholder email in transaction security policy files
-#   4. Deploy transaction security policies and flows to target org
+#   3. Copy policies and flows to a temporary staging directory
+#   4. Replace placeholder values in the staged copies only (repo files stay unchanged)
+#   5. Deploy the staged metadata to the target org
+#   6. Ask whether to delete the temporary staging directory
 #
 # Files deployed:
 #   - Transaction Security Policies
@@ -152,7 +154,50 @@ printf "%b\n" "${GREEN}✓ Deployment confirmed${NC}"
 echo ""
 
 ################################################################################
-# Step 2: Update User Email in Transaction Security Policies
+# Step 2: Stage metadata copies (leave repo files unchanged)
+################################################################################
+
+printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
+printf "%b\n" "${BLUE}  Staging Metadata in a Temporary Directory${NC}"
+printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
+echo ""
+
+# Copy policies and flows so placeholder replacements never dirty the git working tree
+STAGING_DIR=$(mktemp -d "${TMPDIR:-/tmp}/tsp-deploy.XXXXXX")
+
+cleanup_staging() {
+    if [ -z "${STAGING_DIR:-}" ] || [ ! -d "$STAGING_DIR" ]; then
+        return 0
+    fi
+    echo ""
+    printf "%b\n" "${YELLOW}Staging directory:${NC} $STAGING_DIR"
+    if [ ! -t 0 ]; then
+        printf "%b\n" "${CYAN}Non-interactive session: staging directory kept${NC}"
+        return 0
+    fi
+    read -p "$(printf "%b" "${YELLOW}Delete the staging directory? [y/N]: ${NC}")" CONFIRM_DELETE || true
+    CONFIRM_DELETE=${CONFIRM_DELETE:-n}
+    if [[ "$CONFIRM_DELETE" =~ ^[Yy]$ ]]; then
+        rm -rf "$STAGING_DIR"
+        printf "%b\n" "${GREEN}✓ Staging directory deleted${NC}"
+    else
+        printf "%b\n" "${CYAN}Staging directory kept at: $STAGING_DIR${NC}"
+    fi
+}
+trap cleanup_staging EXIT
+
+STAGING_POLICIES_DIR="$STAGING_DIR/transactionSecurityPolicies"
+STAGING_FLOWS_DIR="$STAGING_DIR/flows"
+
+printf "%b\n" "${BLUE}Copying metadata to: $STAGING_DIR${NC}"
+mkdir -p "$STAGING_POLICIES_DIR" "$STAGING_FLOWS_DIR"
+cp -R "$POLICIES_DIR/." "$STAGING_POLICIES_DIR/"
+cp -R "$FLOWS_DIR/." "$STAGING_FLOWS_DIR/"
+printf "%b\n" "${GREEN}✓ Staged copies created (source files in the repo will not be modified)${NC}"
+echo ""
+
+################################################################################
+# Step 3: Update User Email in Staged Transaction Security Policies
 ################################################################################
 
 printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
@@ -160,7 +205,7 @@ printf "%b\n" "${BLUE}  Updating Transaction Security Policy Metadata${NC}"
 printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
 echo ""
 
-# Dynamically find all policy files that contain <user> tags
+# Dynamically find all staged policy files that contain <user> tags
 printf "%b\n" "${BLUE}Scanning for policy files with notification recipients...${NC}"
 POLICY_FILES=()
 while IFS= read -r -d '' file; do
@@ -168,7 +213,7 @@ while IFS= read -r -d '' file; do
     if grep -q '<user>' "$file" 2>/dev/null; then
         POLICY_FILES+=("$file")
     fi
-done < <(find "$POLICIES_DIR" -name "*.transactionSecurityPolicy-meta.xml" -print0 2>/dev/null)
+done < <(find "$STAGING_POLICIES_DIR" -name "*.transactionSecurityPolicy-meta.xml" -print0 2>/dev/null)
 
 if [ ${#POLICY_FILES[@]} -eq 0 ]; then
     printf "%b\n" "${YELLOW}⚠️  No policy files with <user> tags found in: $POLICIES_DIR${NC}"
@@ -202,7 +247,7 @@ printf "%b\n" "${GREEN}✅ Updated $TOTAL_REPLACEMENTS policy file(s)${NC}"
 echo ""
 
 ################################################################################
-# Step 3: Update CI/CD Username in Flow Metadata
+# Step 4: Update CI/CD Username in Staged Flow Metadata
 ################################################################################
 
 printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
@@ -210,7 +255,7 @@ printf "%b\n" "${BLUE}  Updating CI/CD Username in Flow Metadata${NC}"
 printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
 echo ""
 
-FLOW_FILE="$FLOWS_DIR/PolicyCondition_AlertCriticalPermissionAs.flow-meta.xml"
+FLOW_FILE="$STAGING_FLOWS_DIR/PolicyCondition_AlertCriticalPermissionAs.flow-meta.xml"
 if [ -n "$CICD_USERNAME" ]; then
     printf "%b\n" "${BLUE}Updating CI/CD username in flow metadata...${NC}"
     if replace_in_file "$FLOW_FILE" "cicd-username@company.com" "$CICD_USERNAME" "CI/CD username"; then
@@ -222,7 +267,7 @@ fi
 echo ""
 
 ################################################################################
-# Step 4: Deploy Metadata
+# Step 5: Deploy Staged Metadata
 ################################################################################
 
 printf "%b\n" "${BLUE}════════════════════════════════════════════════════════════${NC}"
@@ -232,8 +277,8 @@ echo ""
 printf "%b\n" "${BLUE}Deploying to: $TARGET_ORG_ALIAS${NC}"
 echo ""
 
-# Deploy only transactionSecurityPolicies and flows folders (using default org)
-if ! sf project deploy start --source-dir "$POLICIES_DIR" --source-dir "$FLOWS_DIR" --wait 10; then
+# Deploy staged copies only (using default org); original repo files stay unchanged
+if ! sf project deploy start --source-dir "$STAGING_POLICIES_DIR" --source-dir "$STAGING_FLOWS_DIR" --wait 10; then
     echo ""
     printf "%b\n" "${RED}✗ Deployment failed${NC}"
     exit 1
@@ -268,6 +313,8 @@ else
     echo "  ✓ CI/CD service account: cicd-username@company.com (default placeholder)"
 fi
 echo "  ✓ URL: $TARGET_ORG_URL"
+echo "  ✓ Source files in the repo were left unchanged (replacements applied in a temp staging directory)"
+echo "  ✓ Staging directory: $STAGING_DIR"
 echo ""
 
 printf "%b\n" "${GREEN}Deployed Policies:${NC}"
